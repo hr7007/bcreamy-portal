@@ -647,8 +647,8 @@ function doUpload(){
   if(!title){toast('Please enter a title.');return;}
   if(!cat){toast('Please select a category.');return;}
   if(!S.pendingFile){toast('Please select a file.');return;}
-  if(!depts.length){toast('Select at least one department.');return;}
-  if(!roles.length){toast('Select at least one role.');return;}
+  if(!depts.length) depts=['All'];
+  if(!roles.length) roles=['All'];
 
   var btn=document.getElementById('uploadBtn');
   btn.disabled=true;btn.textContent='Uploading…';
@@ -795,6 +795,8 @@ function openViewer(id){
     var img=document.createElement('img');img.src=d.file_data;img.alt=d.title;body.appendChild(img);
   } else if(d.file_type==='xls'){
     renderExcel(d,body);
+  } else if(d.file_type==='ppt'||d.file_type==='doc'){
+    renderOfficeUrl(d,body);
   } else {
     var dlOk=canDl;
     body.innerHTML='<div class="noprev"><div class="ni">'+(TYPE2ICON[d.file_type]||'📁')+'</div>'
@@ -823,6 +825,30 @@ function doExcel(d,body){
     var wrap=document.createElement('div');wrap.className='xl-viewer';wrap.innerHTML=html;
     body.innerHTML='';body.appendChild(wrap);
   }).catch(function(){body.innerHTML='<div class="noprev"><div class="ni">📈</div><p>Could not load Excel file.</p></div>';});
+}
+
+function renderOfficeUrl(d,body){
+  if(!d.file_data){body.innerHTML='<div class="noprev"><div class="ni">📄</div><p>No file available.</p></div>';return;}
+  var canDl=((S.user&&S.user.role==='Admin')||d.permission==='download');
+  // Use Google Docs viewer for public URLs - works for PPT, DOCX, XLSX
+  var viewerUrl='https://docs.google.com/gview?url='+encodeURIComponent(d.file_data)+'&embedded=true';
+  body.innerHTML='';
+  var ifr=document.createElement('iframe');
+  ifr.src=viewerUrl;
+  ifr.style.cssText='width:100%;height:100%;border:none;background:#fff;';
+  ifr.onerror=function(){showFallback();};
+  // Fallback after 8 seconds if Google Docs viewer doesn't load
+  var fallbackTimer=setTimeout(function(){
+    if(body.contains(ifr)) showFallback();
+  },8000);
+  ifr.onload=function(){clearTimeout(fallbackTimer);};
+  body.appendChild(ifr);
+  function showFallback(){
+    body.innerHTML='<div class="noprev"><div class="ni">'+(TYPE2ICON[d.file_type]||'📁')+'</div>'
+      +'<p><strong>'+d.file_name+'</strong><br>Preview not available for this file.<br>'
+      +(canDl?'Download to view in Microsoft Office.':'Contact HR for access.')+'</p>'
+      +(canDl?'<button class="npdlbtn" onclick="viewerDl()">⬇ Download</button>':'')+'</div>';
+  }
 }
 
 function closeViewer(){
@@ -973,10 +999,21 @@ function saveEditUser(){
 ═══════════════════════════════ */
 function renderDeptTags(){
   var wrap=document.getElementById('deptTags');if(!wrap)return;
-  wrap.innerHTML='<span class="tag-opt" data-val="All">All Departments</span>'
+  wrap.innerHTML='<span class="tag-opt sel" data-val="All">All Departments</span>'
     +S.depts.map(function(d){return '<span class="tag-opt" data-val="'+d+'">'+d+'</span>';}).join('');
   wrap.querySelectorAll('.tag-opt').forEach(function(el){el.addEventListener('click',function(){this.classList.toggle('sel');});});
-  document.querySelectorAll('#roleTags .tag-opt').forEach(function(el){el.addEventListener('click',function(){this.classList.toggle('sel');});});
+  // Wire roleTags and auto-select All Roles
+  var roleWrap=document.getElementById('roleTags');
+  if(roleWrap){
+    roleWrap.querySelectorAll('.tag-opt').forEach(function(el){
+      el.removeEventListener('click',el._tog);
+      el._tog=function(){this.classList.toggle('sel');};
+      el.addEventListener('click',el._tog);
+    });
+    // Auto-select "All Roles" if nothing selected
+    var anySelRole=roleWrap.querySelector('.tag-opt.sel');
+    if(!anySelRole){var allRole=roleWrap.querySelector('[data-val="All"]');if(allRole)allRole.classList.add('sel');}
+  }
 }
 function renderDeptList(){
   document.getElementById('deptList').innerHTML=S.depts.map(function(d){
