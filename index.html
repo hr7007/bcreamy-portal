@@ -217,6 +217,28 @@ tr:hover td{background:var(--cream);}
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--red-dark);color:#fff;padding:10px 18px;border-radius:var(--rs);font-size:13px;z-index:500;box-shadow:0 4px 18px rgba(0,0,0,.25);transform:translateY(70px);opacity:0;transition:all .28s;max-width:300px;}
 .toast.show{transform:translateY(0);opacity:1;}
 
+/* EMPLOYEE SELECTOR */
+.emp-selector{display:flex;flex-wrap:wrap;gap:6px;padding:8px;border:1px solid var(--cream-border);border-radius:var(--rs);background:var(--cream);min-height:48px;max-height:160px;overflow-y:auto;}
+.emp-opt{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:20px;border:1px solid var(--cream-border);background:var(--white);font-size:12px;cursor:pointer;user-select:none;transition:all .15s;}
+.emp-opt:hover{border-color:var(--red);}
+.emp-opt.sel{background:var(--red);color:#fff;border-color:var(--red);}
+.emp-opt .emp-avatar{width:20px;height:20px;border-radius:50%;background:var(--yellow);color:var(--red-dark);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.emp-opt.sel .emp-avatar{background:rgba(255,255,255,.3);color:#fff;}
+.emp-opt .emp-dept{font-size:10px;opacity:.7;}
+.perm-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px;}
+.perm-radio{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--txt2);cursor:pointer;padding:4px 10px;border:1px solid var(--cream-border);border-radius:20px;background:var(--white);}
+.perm-radio input{accent-color:var(--red);cursor:pointer;}
+.perm-radio.active{background:var(--red);color:#fff;border-color:var(--red);}
+.emp-perm-table{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px;}
+.emp-perm-table th{background:var(--cream-dark);padding:6px 10px;text-align:left;font-weight:600;color:var(--txt2);border-bottom:1px solid var(--cream-border);}
+.emp-perm-table td{padding:6px 10px;border-bottom:1px solid var(--cream-border);vertical-align:middle;}
+.emp-perm-table tr:last-child td{border-bottom:none;}
+.emp-perm-table select{padding:3px 8px;border:1px solid var(--cream-border);border-radius:var(--rs);font-family:'DM Sans',sans-serif;font-size:12px;background:var(--cream);color:var(--txt);outline:none;}
+.emp-perm-table select:focus{border-color:var(--red);}
+.access-mode-tabs{display:flex;gap:6px;margin-bottom:10px;}
+.access-mode-tab{padding:6px 14px;border-radius:20px;border:1px solid var(--cream-border);background:var(--white);font-size:12px;font-weight:500;color:var(--txt2);cursor:pointer;transition:all .15s;}
+.access-mode-tab.active{background:var(--red);color:#fff;border-color:var(--red);}
+
 /* DEPT PILLS */
 .dept-pill{display:inline-flex;align-items:center;gap:5px;background:var(--cream-dark);border:1px solid var(--cream-border);border-radius:20px;padding:4px 12px;font-size:13px;margin:3px;}
 .dept-pill button{background:none;border:none;cursor:pointer;color:var(--txt3);font-size:14px;line-height:1;padding:0;}
@@ -339,13 +361,40 @@ tr:hover td{background:var(--cream);}
           <div class="fg"><label>Employee Permission</label>
             <select id="fPerm"><option value="read">👁 Read Only</option><option value="download">⬇ Read &amp; Download</option></select>
           </div>
-          <div class="fg full"><label>Share with Departments</label><div class="tag-select" id="deptTags"></div></div>
-          <div class="fg full"><label>Share with Roles</label>
-            <div class="tag-select" id="roleTags">
-              <span class="tag-opt" data-val="All">All Roles</span>
-              <span class="tag-opt" data-val="Admin">Admin</span>
-              <span class="tag-opt" data-val="Manager">Manager</span>
-              <span class="tag-opt" data-val="Employee">Employee</span>
+          <div class="fg full">
+            <label>Who can access this document?</label>
+            <div class="access-mode-tabs" id="accessModeTabs">
+              <button class="access-mode-tab active" onclick="setAccessMode('all')">🌐 All Employees</button>
+              <button class="access-mode-tab" onclick="setAccessMode('dept')">🏢 By Department</button>
+              <button class="access-mode-tab" onclick="setAccessMode('specific')">👤 Specific Employees</button>
+            </div>
+
+            <!-- ALL MODE -->
+            <div id="accessAll" style="font-size:13px;color:var(--txt2);padding:8px;background:var(--cream);border-radius:var(--rs);border:1px solid var(--cream-border);">
+              ✅ All employees will be able to see this document based on the permission set above.
+            </div>
+
+            <!-- DEPT MODE -->
+            <div id="accessDept" style="display:none;">
+              <div style="font-size:12px;color:var(--txt3);margin-bottom:6px;">Select departments that can access this document:</div>
+              <div class="tag-select" id="deptTags"></div>
+              <div style="font-size:12px;color:var(--txt3);margin-top:8px;margin-bottom:4px;">Select roles within those departments:</div>
+              <div class="tag-select" id="roleTags">
+                <span class="tag-opt sel" data-val="All">All Roles</span>
+                <span class="tag-opt" data-val="Admin">Admin</span>
+                <span class="tag-opt" data-val="Manager">Manager</span>
+                <span class="tag-opt" data-val="Employee">Employee</span>
+              </div>
+            </div>
+
+            <!-- SPECIFIC EMPLOYEES MODE -->
+            <div id="accessSpecific" style="display:none;">
+              <div style="font-size:12px;color:var(--txt3);margin-bottom:6px;">Select employees and set individual permissions:</div>
+              <div class="emp-selector" id="empSelector"></div>
+              <div id="empPermTable" style="margin-top:10px;display:none;">
+                <div style="font-size:12px;font-weight:600;color:var(--txt2);margin-bottom:6px;">Set permission for each selected employee:</div>
+                <table class="emp-perm-table" id="empPermTableInner"><thead><tr><th>Employee</th><th>Department</th><th>Role</th><th>Permission</th></tr></thead><tbody id="empPermBody"></tbody></table>
+              </div>
             </div>
           </div>
         </div>
@@ -448,7 +497,7 @@ var TYPE2ICON={pdf:'📄',doc:'📝',ppt:'📊',xls:'📈',img:'🖼',video:'�
 
 var S={
   user:null, docs:[], users:[], depts:[],
-  activeCat:'All', selIds:new Set(), curDoc:null,
+  activeCat:'All', selIds:new Set(), curDoc:null, accessMode:'all',
   editUserId:null, pendingFile:null
 };
 
@@ -642,13 +691,19 @@ function doUpload(){
   var ver=document.getElementById('fVer').value.trim();
   var mand=document.getElementById('fMand').value;
   var perm=document.getElementById('fPerm').value;
-  var depts=getTagSel('deptTags');
-  var roles=getTagSel('roleTags');
+  var accessMode=S.accessMode||'all';
+  var depts=['All'], roles=['All'], specificUsers=[];
+  if(accessMode==='dept'){
+    depts=getTagSel('deptTags'); roles=getTagSel('roleTags');
+    if(!depts.length) depts=['All']; if(!roles.length) roles=['All'];
+  } else if(accessMode==='specific'){
+    specificUsers=getSpecificUserPerms();
+    if(!specificUsers.length){toast('Please select at least one employee.');return;}
+    depts=['specific']; roles=['specific'];
+  }
   if(!title){toast('Please enter a title.');return;}
   if(!cat){toast('Please select a category.');return;}
   if(!S.pendingFile){toast('Please select a file.');return;}
-  if(!depts.length) depts=['All'];
-  if(!roles.length) roles=['All'];
 
   var btn=document.getElementById('uploadBtn');
   btn.disabled=true;btn.textContent='Uploading…';
@@ -668,7 +723,7 @@ function doUpload(){
     return supaPost('documents',{
       title:title,category:cat,description:desc,version:ver,
       mandatory:mand,permission:perm,
-      depts:depts,roles:roles,
+      depts:depts,roles:roles,specific_users:specificUsers,access_mode:accessMode,
       file_name:S.pendingFile.name,file_type:ftype,
       file_size:S.pendingFile.size/1048576,
       file_data:fileUrl,
@@ -684,6 +739,7 @@ function doUpload(){
     document.getElementById('fPerm').value='read';
     clearTagSel('deptTags');clearTagSel('roleTags');clearFile();
     btn.disabled=false;btn.textContent='⬆ Upload Document';
+    setAccessMode('all'); S.accessMode='all';
     toast('Document uploaded! All users can see it now.');
     loadDocs().then(function(){renderStats();renderCatTabs();renderDocs();});
     showTab('docs');
@@ -701,6 +757,11 @@ function doUpload(){
 function canSee(doc){
   if(!S.user)return false;
   if(S.user.role==='Admin')return true;
+  // Specific user mode
+  if(doc.access_mode==='specific'||( doc.depts&&doc.depts[0]==='specific')){
+    var su=doc.specific_users||[];
+    return su.some(function(e){return e.userId===S.user.id;});
+  }
   var dOk=doc.depts&&(doc.depts.indexOf('All')>-1||doc.depts.indexOf(S.user.department)>-1);
   var rOk=doc.roles&&(doc.roles.indexOf('All')>-1||doc.roles.indexOf(S.user.role)>-1);
   return dOk&&rOk;
@@ -758,7 +819,7 @@ function renderDocs(){
 function cardHTML(d){
   var cat=CATS[d.category]||CATS['General'];
   var dt=new Date(d.uploaded_at).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-  var canDl=(S.user&&S.user.role==='Admin')||d.permission==='download';
+  var canDl=(S.user&&S.user.role==='Admin')||d.permission==='download'||getUserDocPerm(d)==='download';
   var hasD=!!d.file_data;
   var mB=d.mandatory==='Yes'?'<span class="badge" style="background:#FFE4E4;color:#7B0000;">Required</span>':'<span class="badge" style="background:#D1FAE5;color:#065F46;">Optional</span>';
   var pB=d.permission==='download'?'<span class="badge" style="background:#D1FAE5;color:#065F46;">⬇ Download</span>':'<span class="badge" style="background:#FEF3C7;color:#92400E;">👁 Read only</span>';
@@ -784,7 +845,7 @@ function openViewer(id){
   if(!d)return;
   S.curDoc=d;
   document.getElementById('vtitle').textContent=d.title;
-  var canDl=((S.user&&S.user.role==='Admin')||d.permission==='download')&&d.file_data;
+  var canDl=((S.user&&S.user.role==='Admin')||d.permission==='download'||getUserDocPerm(d)==='download')&&d.file_data;
   document.getElementById('vdlbtn').style.display=canDl?'block':'none';
   var body=document.getElementById('vbody');body.innerHTML='';
   if(!d.file_data){
@@ -997,6 +1058,67 @@ function saveEditUser(){
 /* ═══════════════════════════════
    DEPARTMENTS
 ═══════════════════════════════ */
+/* Access mode */
+function setAccessMode(mode){
+  S.accessMode=mode;
+  document.getElementById('accessAll').style.display=mode==='all'?'':'none';
+  document.getElementById('accessDept').style.display=mode==='dept'?'':'none';
+  document.getElementById('accessSpecific').style.display=mode==='specific'?'':'none';
+  document.querySelectorAll('.access-mode-tab').forEach(function(t,i){
+    t.classList.toggle('active',['all','dept','specific'][i]===mode);
+  });
+  if(mode==='specific') renderEmpSelector();
+}
+
+function renderEmpSelector(){
+  var wrap=document.getElementById('empSelector');
+  if(!wrap)return;
+  wrap.innerHTML=S.users.filter(function(u){return u.role!=='Admin';}).map(function(u){
+    var init=u.name.split(' ').map(function(n){return n[0];}).join('').substring(0,2).toUpperCase();
+    var isSel=wrap.querySelector&&false; // will be toggled on click
+    return '<div class="emp-opt" data-uid="'+u.id+'" data-name="'+u.name+'" data-dept="'+u.department+'" data-role="'+u.role+'" onclick="toggleEmpSel(this)">'
+      +'<div class="emp-avatar">'+init+'</div>'
+      +'<div><div>'+u.name+'</div><div class="emp-dept">'+u.department+' · '+u.role+'</div></div>'
+      +'</div>';
+  }).join('');
+}
+
+function toggleEmpSel(el){
+  el.classList.toggle('sel');
+  updateEmpPermTable();
+}
+
+function updateEmpPermTable(){
+  var selected=Array.from(document.querySelectorAll('#empSelector .emp-opt.sel'));
+  var tableWrap=document.getElementById('empPermTable');
+  var tbody=document.getElementById('empPermBody');
+  if(!selected.length){tableWrap.style.display='none';return;}
+  tableWrap.style.display='';
+  tbody.innerHTML=selected.map(function(el){
+    var uid=el.dataset.uid;
+    var existing=tbody.querySelector('select[data-uid="'+uid+'"]');
+    var curVal=existing?existing.value:'read';
+    return '<tr><td><strong>'+el.dataset.name+'</strong></td><td>'+el.dataset.dept+'</td><td>'+el.dataset.role+'</td>'
+      +'<td><select data-uid="'+uid+'" data-name="'+el.dataset.name+'">'
+      +'<option value="none"'+(curVal==='none'?' selected':'')+'>🚫 No Access</option>'
+      +'<option value="read"'+(curVal==='read'?' selected':'')+'>👁 Read Only</option>'
+      +'<option value="download"'+(curVal==='download'?' selected':'')+'>⬇ Read & Download</option>'
+      +'</select></td></tr>';
+  }).join('');
+}
+
+function getSpecificUserPerms(){
+  return Array.from(document.querySelectorAll('#empPermBody select')).map(function(sel){
+    return {userId:sel.dataset.uid,userName:sel.dataset.name,permission:sel.value};
+  }).filter(function(e){return e.permission!=='none';});
+}
+
+function getUserDocPerm(doc){
+  if(!S.user||!doc.specific_users) return null;
+  var entry=(doc.specific_users||[]).find(function(e){return e.userId===S.user.id;});
+  return entry?entry.permission:null;
+}
+
 function renderDeptTags(){
   var wrap=document.getElementById('deptTags');if(!wrap)return;
   wrap.innerHTML='<span class="tag-opt sel" data-val="All">All Departments</span>'
